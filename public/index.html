@@ -232,15 +232,19 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 const API = ''; // Vercel serves API from same origin
 
 async function loadData() {
-  const [stats, tasks, agents, pipeline, calendar, memories] = await Promise.all([
-    fetchData('/api/stats'),
-    fetchData('/api/tasks'),
-    fetchData('/api/agents'),
-    fetchData('/api/pipeline'),
-    fetchData('/api/calendar'),
-    fetchData('/api/memories')
-  ]);
-  renderAll({ stats, tasks, agents, pipeline, calendar, memories });
+  try {
+    const [stats, tasks, agents, pipeline, calendar, memories] = await Promise.all([
+      fetchData('/api/stats'),
+      fetchData('/api/tasks'),
+      fetchData('/api/agents'),
+      fetchData('/api/pipeline'),
+      fetchData('/api/calendar'),
+      fetchData('/api/memories')
+    ]);
+    renderAll({ stats, tasks, agents, pipeline, calendar, memories });
+  } catch(e) {
+    console.error('Load error:', e);
+  }
 }
 
 async function fetchData(url) {
@@ -268,14 +272,14 @@ function renderStats(s) {
 }
 
 function renderTasks(t) {
-  if(!t) return;
+  if(!t || !Array.isArray(t)) return;
   const todo=t.filter(x=>x.status==='todo'), prog=t.filter(x=>x.status==='inprogress'), done=t.filter(x=>x.status==='done');
   document.getElementById('todo-count').textContent=todo.length;
   document.getElementById('progress-count').textContent=prog.length;
   document.getElementById('done-count').textContent=done.length;
-  document.getElementById('tasks-todo').innerHTML=todo.map(tk=>`<div class="task-card"><div class="task-title">${tk.title}</div><div class="task-meta"><span class="task-tag ${tk.owner==='sage'?'sage':'user'}">${tk.owner==='sage'?'🐙 Sage':'👤 You'}</span></div></div>`).join('');
-  document.getElementById('tasks-progress').innerHTML=prog.map(tk=>`<div class="task-card"><div class="task-title">${tk.title}</div><div class="task-meta"><span class="task-tag ${tk.owner==='sage'?'sage':'user'}">${tk.owner==='sage'?'🐙 Sage':'👤 You'}</span></div></div>`).join('');
-  document.getElementById('tasks-done').innerHTML=done.map(tk=>`<div class="task-card"><div class="task-title">${tk.title}</div><div class="task-meta"><span class="task-tag ${tk.owner==='sage'?'sage':'user'}">${tk.owner==='sage'?'🐙 Sage':'👤 You'}</span></div></div>`).join('');
+  document.getElementById('tasks-todo').innerHTML=(todo||[]).map(tk=>`<div class="task-card"><div class="task-title">${tk.title}</div><div class="task-meta"><span class="task-tag ${tk.owner==='sage'?'sage':'user'}">${tk.owner==='sage'?'🐙 Sage':'👤 You'}</span></div></div>`).join('');
+  document.getElementById('tasks-progress').innerHTML=(prog||[]).map(tk=>`<div class="task-card"><div class="task-title">${tk.title}</div><div class="task-meta"><span class="task-tag ${tk.owner==='sage'?'sage':'user'}">${tk.owner==='sage'?'🐙 Sage':'👤 You'}</span></div></div>`).join('');
+  document.getElementById('tasks-done').innerHTML=(done||[]).map(tk=>`<div class="task-card"><div class="task-title">${tk.title}</div><div class="task-meta"><span class="task-tag ${tk.owner==='sage'?'sage':'user'}">${tk.owner==='sage'?'🐙 Sage':'👤 You'}</span></div></div>`).join('');
 }
 
 function renderTeam(a) {
@@ -286,8 +290,8 @@ function renderTeam(a) {
 }
 
 function renderPipeline(p) {
-  if(!p) return;
-  document.getElementById('pipeline-grid').innerHTML = `<div class="pipe-col"><div class="pipe-header"><div class="pipe-icon ideas">I</div><span class="pipe-title">Ideas</span><span class="pipe-count">${p.ideas.length}</span></div>${p.ideas.map(i=>`<div class="pipe-item"><div class="pipe-item-title">${i.title}</div><div class="pipe-item-date">${i.date}</div></div>`).join('')}</div><div class="pipe-col"><div class="pipe-header"><div class="pipe-icon writing">W</div><span class="pipe-title">Writing</span><span class="pipe-count">${p.writing.length}</span></div>${p.writing.map(i=>`<div class="pipe-item"><div class="pipe-item-title">${i.title}</div><div class="pipe-item-date">${i.date}</div></div>`).join('')}</div><div class="pipe-col"><div class="pipe-header"><div class="pipe-icon media">M</div><span class="pipe-title">Media</span><span class="pipe-count">${p.media.length}</span></div>${p.media.map(i=>`<div class="pipe-item"><div class="pipe-item-title">${i.title}</div><div class="pipe-item-date">${i.date}</div></div>`).join('')}</div><div class="pipe-col"><div class="pipe-header"><div class="pipe-icon published">P</div><span class="pipe-title">Published</span><span class="pipe-count">${p.published.length}</span></div>${p.published.map(i=>`<div class="pipe-item"><div class="pipe-item-title">${i.title}</div><div class="pipe-item-date">${i.date}</div></div>`).join('')}</div>`;
+  if(!p || !p.ideas || !p.writing || !p.media || !p.published) return;
+  document.getElementById('pipeline-grid').innerHTML = `<div class="pipe-col"><div class="pipe-header"><div class="pipe-icon ideas">I</div><span class="pipe-title">Ideas</span><span class="pipe-count">${(p.ideas||[]).length}</span></div>${(p.ideas||[]).map(i=>`<div class="pipe-item"><div class="pipe-item-title">${i.title}</div><div class="pipe-item-date">${i.date}</div></div>`).join('')}</div><div class="pipe-col"><div class="pipe-header"><div class="pipe-icon writing">W</div><span class="pipe-title">Writing</span><span class="pipe-count">${(p.writing||[]).length}</span></div>${(p.writing||[]).map(i=>`<div class="pipe-item"><div class="pipe-item-title">${i.title}</div><div class="pipe-item-date">${i.date}</div></div>`).join('')}</div><div class="pipe-col"><div class="pipe-header"><div class="pipe-icon media">M</div><span class="pipe-title">Media</span><span class="pipe-count">${(p.media||[]).length}</span></div>${(p.media||[]).map(i=>`<div class="pipe-item"><div class="pipe-item-title">${i.title}</div><div class="pipe-item-date">${i.date}</div></div>`).join('')}</div><div class="pipe-col"><div class="pipe-header"><div class="pipe-icon published">P</div><span class="pipe-title">Published</span><span class="pipe-count">${(p.published||[]).length}</span></div>${(p.published||[]).map(i=>`<div class="pipe-item"><div class="pipe-item-title">${i.title}</div><div class="pipe-item-date">${i.date}</div></div>`).join('')}</div>`;
 }
 
 function renderCalendar(c) {
@@ -298,9 +302,10 @@ function renderCalendar(c) {
 }
 
 function renderMemory(m) {
-  if(!m) return;
-  document.getElementById('memory-list').innerHTML=m.map((x,i)=>`<div class="memory-item ${i===0?'active':''}" onclick="showMemory(${x.id})"><div class="memory-item-title">${x.title}</div><div class="memory-item-date">${x.date}</div></div>`).join('');
-  if(m[0]) showMemory(m[0].id);
+  if(!m || !Array.isArray(m)) return;
+  currentMemories = m;
+  document.getElementById('memory-list').innerHTML=(m||[]).map((x,i)=>`<div class="memory-item ${i===0?'active':''}" onclick="showMemory(${x.id})"><div class="memory-item-title">${x.title}</div><div class="memory-item-date">${x.date}</div></div>`).join('');
+  if(m && m[0]) showMemory(m[0].id);
 }
 
 function showMemory(id) {
